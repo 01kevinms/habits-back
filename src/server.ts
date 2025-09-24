@@ -16,7 +16,7 @@ server.register(authPlugin);
 
 // Registrar CORS
 server.register(cors, {
-  origin: ["http://localhost:5173"], // porta do frontend
+  origin: ["https://01kevinms.github.io/habit-front/"], // porta do frontend
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 });
