@@ -16,7 +16,7 @@ server.register(authPlugin);
 
 // Registrar CORS
 server.register(cors, {
-  origin: ["https://01kevinms.github.io", "https://habit-back.onrender.com"], // porta do frontend
+  origin: ["https://01kevinms.github.io"], // porta do frontend
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 });
