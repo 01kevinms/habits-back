@@ -21,7 +21,7 @@ model Habit {
   title       String
   description String?
   frequency   String     // 'daily' | 'weekly' | 'custom'
-  userId      String
+  userId      String     @db.ObjectId
   user        User       @relation(fields: [userId], references: [id])
   logs        HabitLog[]
   createdAt   DateTime   @default(now())
@@ -31,7 +31,7 @@ model HabitLog {
    id      String   @id @default(auto()) @map("_id") @db.ObjectId
   dayKey   String   // "2025-09-09"
   status   Boolean  @default(true)
-  habitId  String
+  habitId  String   @db.ObjectId
   habit    Habit    @relation(fields: [habitId], references: [id])
   @@unique([habitId, dayKey])
 }

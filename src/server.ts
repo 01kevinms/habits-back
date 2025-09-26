@@ -16,7 +16,7 @@ server.register(authPlugin);
 
 // Registrar CORS
 server.register(cors, {
-  origin: ["https://01kevinms.github.io"], // porta do frontend
+  origin: ["http://localhost:5173"], // porta do frontend
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 });
@@ -25,6 +25,7 @@ server.register(cors, {
 server.register(authRoutes, { prefix: "/auth" });
 server.register(habitRoutes, { prefix: "/api/habit" });
 server.register(statRoutes, { prefix: "/api/stat" });
+
 
 const start = async () => {
   try {
