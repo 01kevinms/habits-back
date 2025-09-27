@@ -1,60 +1,140 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.toggleHabitLog = exports.deleteHabit = exports.createHabit = exports.getHabits = void 0;
+function getTodayKey() {
+    return new Date().toISOString().split("T")[0];
+}
+/**
+ * GET /habits
+ * Lista hábitos do usuário com logs e todayStatus
+ */
 const getHabits = async (req, reply) => {
-    const userId = req.user.id;
-    const today = new Date().toISOString().split("T")[0];
-    const habits = await req.server.prisma.habit.findMany({
-        where: { userId },
-        include: { logs: { where: { dayKey: today } } },
-    });
-    return habits.map((h) => ({
-        id: h.id,
-        title: h.title,
-        description: h.description,
-        frequency: h.frequency,
-        todayStatus: h.logs.length > 0,
-    }));
+    try {
+        const userId = req.user.id;
+        const todayKey = getTodayKey();
+        const habits = await req.server.prisma.habit.findMany({
+            where: { userId },
+            include: { logs: true },
+            orderBy: { createdAt: "desc" },
+        });
+        const res = habits.map((h) => {
+            const todayStatus = h.logs.some((l) => l.dayKey === todayKey && l.status);
+            return {
+                id: h.id,
+                title: h.title,
+                description: h.description,
+                frequency: h.frequency,
+                userId: h.userId,
+                createdAt: h.createdAt,
+                logs: h.logs ?? [], // sempre array
+                todayStatus, // sempre boolean
+            };
+        });
+        return reply.send(res);
+    }
+    catch (err) {
+        req.server.log.error(err);
+        return reply.code(500).send({ error: "Erro ao buscar hábitos" });
+    }
 };
 exports.getHabits = getHabits;
+/**
+ * POST /habits
+ * Cria um novo hábito
+ */
 const createHabit = async (req, reply) => {
-    const { title, description, frequency } = req.body;
-    return req.server.prisma.habit.create({
-        data: { title, description, frequency, userId: req.user.id },
-    });
+    try {
+        const userId = req.user.id;
+        const { title, description, frequency } = req.body;
+        const created = await req.server.prisma.habit.create({
+            data: { title, description, frequency, userId },
+        });
+        return reply.code(201).send({
+            id: created.id,
+            title: created.title,
+            description: created.description,
+            frequency: created.frequency,
+            userId: created.userId,
+            createdAt: created.createdAt,
+            logs: [], // sempre array
+            todayStatus: false, // sempre boolean
+        });
+    }
+    catch (err) {
+        req.server.log.error(err);
+        return reply.code(500).send({ error: "Erro ao criar hábito" });
+    }
 };
 exports.createHabit = createHabit;
+/**
+ * DELETE /habits/:id
+ * Remove hábito e seus logs
+ */
 const deleteHabit = async (req, reply) => {
-    const { id } = req.params;
-    await req.server.prisma.habit.delete({ where: { id } });
-    return { success: true };
+    try {
+        const { id } = req.params;
+        await req.server.prisma.habitLog.deleteMany({ where: { habitId: id } });
+        await req.server.prisma.habit.delete({ where: { id } });
+        return reply.send({ success: true });
+    }
+    catch (err) {
+        req.server.log.error(err);
+        return reply.code(500).send({ error: "Erro ao deletar hábito" });
+    }
 };
 exports.deleteHabit = deleteHabit;
+/**
+ * PATCH /habits/:id/toggle
+ * Marca ou desmarca hábito no dia atual
+ */
 const toggleHabitLog = async (req, reply) => {
-    const { id } = req.params;
-    const today = new Date().toISOString().split("T")[0];
-    const existing = await req.server.prisma.habitLog.findUnique({
-        where: { habitId_dayKey: { habitId: id, dayKey: today } },
-    });
-    if (existing) {
-        await req.server.prisma.habitLog.delete({ where: { id: existing.id } });
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+        const todayKey = getTodayKey();
+        const existing = await req.server.prisma.habitLog.findUnique({
+            where: { habitId_dayKey: { habitId: id, dayKey: todayKey } },
+        });
+        if (existing) {
+            await req.server.prisma.habitLog.delete({ where: { id: existing.id } });
+        }
+        else {
+            await req.server.prisma.habitLog.create({
+                data: { habitId: id, dayKey: todayKey, status: true },
+            });
+        }
+        const habit = await req.server.prisma.habit.findUnique({
+            where: { id },
+            include: { logs: true },
+        });
+        if (!habit) {
+            return reply.code(404).send({ error: "Hábito não encontrado" });
+        }
+        const todayStatus = habit.logs.some((l) => l.dayKey === todayKey && l.status);
+        const allHabits = await req.server.prisma.habit.findMany({
+            where: { userId },
+            include: { logs: true },
+        });
+        const totalHabits = allHabits.length;
+        const completedToday = allHabits.filter((h) => h.logs.some((l) => l.dayKey === todayKey && l.status)).length;
+        const percent = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
+        return reply.send({
+            habit: {
+                id: habit.id,
+                title: habit.title,
+                description: habit.description,
+                frequency: habit.frequency,
+                userId: habit.userId,
+                createdAt: habit.createdAt,
+                logs: habit.logs ?? [],
+                todayStatus,
+            },
+            stats: { completedToday, totalHabits, percent },
+        });
     }
-    else {
-        await req.server.prisma.habitLog.create({ data: { habitId: id, dayKey: today } });
+    catch (err) {
+        req.server.log.error(err);
+        return reply.code(500).send({ error: "Erro ao alternar log do hábito" });
     }
-    const habit = await req.server.prisma.habit.findUnique({
-        where: { id },
-        include: { logs: true },
-    });
-    if (!habit)
-        throw new Error("Hábito não encontrado");
-    const todayStatus = habit.logs.some((log) => log.dayKey === today);
-    return {
-        id: habit.id,
-        title: habit.title,
-        description: habit.description,
-        frequency: habit.frequency,
-        todayStatus,
-    };
 };
 exports.toggleHabitLog = toggleHabitLog;

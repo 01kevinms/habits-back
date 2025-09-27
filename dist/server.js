@@ -17,7 +17,7 @@ server.register(prisma_1.default);
 server.register(auth_1.default);
 // Registrar CORS
 server.register(cors_1.default, {
-    origin: ["http://localhost:5173"], // porta do frontend
+    origin: ["https://01kevinms.github.io"],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
 });
