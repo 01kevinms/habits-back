@@ -15,8 +15,9 @@ server.register(prismaPlugin);
 server.register(authPlugin);
 
 // Registrar CORS
+// "https://01kevinms.github.io"
 server.register(cors, {
-  origin: ["https://01kevinms.github.io"],
+  origin: ["http://localhost:5173"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 });

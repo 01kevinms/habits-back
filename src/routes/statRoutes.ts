@@ -1,9 +1,16 @@
 import { FastifyInstance } from "fastify";
-import { getWeeklyStats, getMonthlyStats, getStreakStats, getDailyStats } from "../controllers/statController";
+import {
+  getDailyStats,
+  getWeeklyStats,
+  getMonthlyStats,
+  getStreakStats,
+} from "../controllers/statController";
 
 export default async function statRoutes(server: FastifyInstance) {
-  server.get("/daily", { preHandler: [server.authGuard] }, getDailyStats);
-  server.get("/weekly", { preHandler: [server.authGuard] }, getWeeklyStats);
-  server.get("/monthly", { preHandler: [server.authGuard] }, getMonthlyStats);
-  server.get("/streak", { preHandler: [server.authGuard] }, getStreakStats);
+  server.addHook("preHandler", server.authGuard);
+
+  server.get("/daily", async (req, reply) => getDailyStats(req, reply));
+  server.get("/weekly", async (req, reply) => getWeeklyStats(req, reply));
+  server.get("/monthly", async (req, reply) => getMonthlyStats(req, reply));
+  server.get("/streak", async (req, reply) => getStreakStats(req, reply));
 }
