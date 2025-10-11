@@ -16,7 +16,7 @@ model User {
 
   habits       Habit[]
   diets        Diet[]
-  status       Status[]  // histórico de status físicos
+  status       statusPhysical[]  // histórico de status físicos
 }
 
 model Habit {
@@ -48,7 +48,6 @@ model Diet {
   type         DietType?
   description  String?
   period       String     // Ex: "Café da manhã", "Almoço", "Jantar"
-  calories     Float
   datekey      String
   meta         Float?
   atingiumeta  Boolean    @default(false)
@@ -72,12 +71,12 @@ model Food {
   diet        Diet     @relation(fields: [dietId], references: [id])
 }
 
-model Status {
+model statusPhysical {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   weight    Float
   height    Float
   age       Int
-  genere    String   // 'masculine' | 'feminine'
+  genere    String
   imc       Float
   tmb       Float
   createdAt DateTime @default(now())
@@ -89,5 +88,4 @@ model Status {
 enum DietType {
   cutting
   bulking
-  lunch
 }
