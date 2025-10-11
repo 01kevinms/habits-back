@@ -27,7 +27,6 @@ async function getDiet(req, reply) {
         });
         const meta = status?.tmb ?? 0;
         const atingiumeta = totalCalories >= meta;
-        // Retornar objeto bem definido
         return reply.send({
             diets: diet,
             totalCalories,

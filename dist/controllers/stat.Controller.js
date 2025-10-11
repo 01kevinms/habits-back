@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getStreakStats = exports.getMonthlyStats = exports.getWeeklyStats = exports.getDailyStats = void 0;
 // Funções de manipulação de datas do date-fns
 const date_fns_1 = require("date-fns");
-// Estatísticas diárias: quantos hábitos foram concluídos hoje
 const getDailyStats = async (req, reply) => {
     try {
         const userId = req.user.id; // ID do usuário autenticado

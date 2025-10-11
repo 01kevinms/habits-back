@@ -1,6 +1,6 @@
 // diet.routes.ts
 import { FastifyInstance } from "fastify";
-import { createDiet, getDiet, deletDiet, deleteFood, createFood, updateFood, updateDiet } from "../controllers/diet.controller";
+import { createDiet, getDiet, deletDiet, deleteFood, createFood, updateFood, updateDiet } from "../controllers/diet.Controller";
 import { NewDietBody } from "../types/fastify";
 
 export default async function DietRoutes(server: FastifyInstance) {

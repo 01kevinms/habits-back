@@ -4,7 +4,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { startOfWeek, startOfMonth, endOfMonth, format } from "date-fns";
 
 
-  // Estatísticas diárias: quantos hábitos foram concluídos hoje
+
  
 export const getDailyStats = async (req: FastifyRequest, reply: FastifyReply) => {
   try {

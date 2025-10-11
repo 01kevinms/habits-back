@@ -4,12 +4,12 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import bcrypt from "bcrypt";
 import { LoginRequest, RegisterRequest } from "../types/fastify";
 
-// -------------------- REGISTRO DE USUÁRIO --------------------
+
 export const registerUser = async (req: FastifyRequest, reply: FastifyReply) => {
-  // Extrai dados do corpo da requisição (name, email e senha)
+
   const { email, password, name } = req.body as RegisterRequest;
 
-  // Validação: verifica se todos os campos foram preenchidos
+
   if (!email || !password || !name) {
     return reply.code(400).send({ error: "Nome, email e senha são obrigatórios" });
   }

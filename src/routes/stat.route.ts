@@ -6,7 +6,7 @@ import {
   getWeeklyStats,
   getMonthlyStats,
   getStreakStats,
-} from "../controllers/stat.controller";
+} from "../controllers/stat.Controller";
 
 // Define as rotas de estatísticas
 export default async function statRoutes(server: FastifyInstance) {

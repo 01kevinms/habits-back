@@ -2,7 +2,7 @@
  import fetch from "node-fetch";
  import { NutritionixFood } from "../types/fastify"; 
 
-
+// API CHAVE
  const APP_ID = process.env.NUTRITIONIX_APP_ID!; 
  const API_KEY = process.env.NUTRITIONIX_API_KEY!; 
 

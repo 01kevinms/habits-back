@@ -27,7 +27,6 @@ export async function getDiet(req: FastifyRequest, reply: FastifyReply) {
     const meta = status?.tmb ?? 0;
     const atingiumeta = totalCalories >= meta;
 
-    // Retornar objeto bem definido
     return reply.send({
       diets: diet,
       totalCalories,

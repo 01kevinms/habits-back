@@ -6,11 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.loginUser = exports.registerUser = void 0;
 // Biblioteca para criptografar e verificar senhas
 const bcrypt_1 = __importDefault(require("bcrypt"));
-// -------------------- REGISTRO DE USUÁRIO --------------------
 const registerUser = async (req, reply) => {
-    // Extrai dados do corpo da requisição (name, email e senha)
     const { email, password, name } = req.body;
-    // Validação: verifica se todos os campos foram preenchidos
     if (!email || !password || !name) {
         return reply.code(400).send({ error: "Nome, email e senha são obrigatórios" });
     }

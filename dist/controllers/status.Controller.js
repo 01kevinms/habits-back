@@ -20,8 +20,7 @@ async function getStatus(req, reply) {
         return reply.code(500).send({ error: "Erro ao buscar status fisicos" });
     }
 }
-async function createStatus(req, // Tipagem explícita do body
-reply) {
+async function createStatus(req, reply) {
     try {
         // Desestruturação do body
         const { weight, height, age, genere } = req.body;

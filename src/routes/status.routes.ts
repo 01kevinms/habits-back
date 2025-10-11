@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { createStatus, deleteStatus, getStatus } from "../controllers/status.controller";
+import { createStatus, deleteStatus, getStatus } from "../controllers/status.Controller";
 import { NewStatusPhysical } from "../types/fastify";
 
 export default function StatusRoutes(server:FastifyInstance ){

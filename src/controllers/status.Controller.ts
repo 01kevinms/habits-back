@@ -20,7 +20,7 @@ try {
 }
 
 export async function createStatus(
-  req: FastifyRequest<{ Body: NewStatusPhysical }>, // Tipagem explícita do body
+  req: FastifyRequest<{ Body: NewStatusPhysical }>, 
   reply: FastifyReply
 ) {
   try {

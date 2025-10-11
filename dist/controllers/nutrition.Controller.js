@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.searchFood = searchFood;
 const node_fetch_1 = __importDefault(require("node-fetch"));
+// API CHAVE
 const APP_ID = process.env.NUTRITIONIX_APP_ID;
 const API_KEY = process.env.NUTRITIONIX_API_KEY;
 async function searchFood(req, reply) {

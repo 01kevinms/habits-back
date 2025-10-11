@@ -17,7 +17,7 @@ const getHabits = async (req, reply) => {
         const habits = await req.server.prisma.habit.findMany({
             where: { userId },
             include: { logs: true },
-            orderBy: { createdAt: "desc" }, // Ordena do mais recente para o mais antigo
+            orderBy: { createdAt: "desc" },
         });
         // Mapeia hábitos adicionando todayStatus (se o hábito foi concluído hoje)
         const res = habits.map((h) => {
