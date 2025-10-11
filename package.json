@@ -2,14 +2,13 @@
   "name": "backts",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "build": "tsc",
-    "generate": "prisma generate",
-    "postinstall": "prisma generate",
-    "prestart": "npm run build",
-    "start": "node dist/server.js",
-    "dev": "npx tsx watch src/server.ts"
-  },
+ "scripts": {
+  "dev": "tsx watch src/server.ts",
+  "build": "prisma generate && tsc",
+  "postinstall": "prisma generate",
+  "start": "node dist/server.js"
+}
+,
   "_moduleAliases": {
     "@global": "dist/api/components/global",
     "@milestone": "dist/api/components/milestone",
