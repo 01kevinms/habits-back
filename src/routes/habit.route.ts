@@ -6,7 +6,7 @@ import {
   createHabit,
   deleteHabit,
   toggleHabitLog,
-} from "../controllers/habit.Controller";
+} from "../controllers/habit.controller";
 
 // Define as rotas de hábitos
 export default async function habitRoutes(server: FastifyInstance) {
