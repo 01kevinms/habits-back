@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { searchFood } from "../controllers/nutrition.Controller";
+import { searchFood } from "../controllers/nutrition.controller";
 
 
 export default async function nutritionixRoutes(server: FastifyInstance) {
