@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,31 +6,88 @@ datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
 }
+
 model User {
-   id      String   @id @default(auto()) @map("_id") @db.ObjectId
-  email         String   @unique
-  name          String?
-  passwordHash  String
-  habits        Habit[]
-  createdAt     DateTime @default(now())
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  email        String    @unique
+  name         String?
+  passwordHash String
+  createdAt    DateTime  @default(now())
+
+  habits       Habit[]
+  diets        Diet[]
+  status       Status[]  // histórico de status físicos
 }
 
 model Habit {
-  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   description String?
   frequency   String     // 'daily' | 'weekly' | 'custom'
+  createdAt   DateTime   @default(now())
+
   userId      String     @db.ObjectId
   user        User       @relation(fields: [userId], references: [id])
+
   logs        HabitLog[]
-  createdAt   DateTime   @default(now())
 }
 
 model HabitLog {
-   id      String   @id @default(auto()) @map("_id") @db.ObjectId
-  dayKey   String   // "2025-09-09"
-  status   Boolean  @default(true)
-  habitId  String   @db.ObjectId
-  habit    Habit    @relation(fields: [habitId], references: [id])
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  dayKey    String   // "2025-09-09"
+  status    Boolean  @default(true)
+
+  habitId   String   @db.ObjectId
+  habit     Habit    @relation(fields: [habitId], references: [id])
+
   @@unique([habitId, dayKey])
+}
+
+model Diet {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  type         DietType?
+  description  String?
+  period       String     // Ex: "Café da manhã", "Almoço", "Jantar"
+  calories     Float
+  datekey      String
+  meta         Float?
+  atingiumeta  Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+
+  userId       String     @db.ObjectId
+  user         User       @relation(fields: [userId], references: [id])
+
+  foods        Food[]
+}
+
+model Food {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  description String
+  grams       Float
+  calories    Float
+  protein     Float @default(0)
+  carbs       Float @default(0)
+
+  dietId      String   @db.ObjectId
+  diet        Diet     @relation(fields: [dietId], references: [id])
+}
+
+model Status {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  weight    Float
+  height    Float
+  age       Int
+  genere    String   // 'masculine' | 'feminine'
+  imc       Float
+  tmb       Float
+  createdAt DateTime @default(now())
+
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+enum DietType {
+  cutting
+  bulking
+  lunch
 }

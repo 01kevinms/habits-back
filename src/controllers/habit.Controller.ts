@@ -1,30 +1,28 @@
 import { FastifyReply, FastifyRequest } from "fastify";
+import { NewHabitBody } from "../types/fastify";
 
-interface NewHabitBody {
-  title: string;
-  description?: string;
-  frequency: "daily" | "weekly" | "monthly";
-}
-
+// Função auxiliar que retorna a data de hoje no formato YYYY-MM-DD
 function getTodayKey() {
   return new Date().toISOString().split("T")[0];
 }
 
 /**
  * GET /habits
- * Lista hábitos do usuário com logs e todayStatus
+ * Lista todos os hábitos do usuário com seus logs e status do dia atual
  */
 export const getHabits = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userId = (req.user as any).id;
-    const todayKey = getTodayKey();
+    const userId = req.user.id; // ID do usuário autenticado
+    const todayKey = getTodayKey();      // Data de hoje
 
+    // Busca todos os hábitos do usuário, incluindo logs
     const habits = await req.server.prisma.habit.findMany({
       where: { userId },
       include: { logs: true },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "desc" }, // Ordena do mais recente para o mais antigo
     });
 
+    // Mapeia hábitos adicionando todayStatus (se o hábito foi concluído hoje)
     const res = habits.map((h) => {
       const todayStatus = h.logs.some((l) => l.dayKey === todayKey && l.status);
       return {
@@ -34,8 +32,8 @@ export const getHabits = async (req: FastifyRequest, reply: FastifyReply) => {
         frequency: h.frequency,
         userId: h.userId,
         createdAt: h.createdAt,
-        logs: h.logs ?? [], // sempre array
-        todayStatus,        // sempre boolean
+        logs: h.logs ?? [], // Garante sempre um array
+        todayStatus,        // Booleano indicando status do dia
       };
     });
 
@@ -48,17 +46,19 @@ export const getHabits = async (req: FastifyRequest, reply: FastifyReply) => {
 
 /**
  * POST /habits
- * Cria um novo hábito
+ * Cria um novo hábito para o usuário
  */
 export const createHabit = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as any).id;               // ID do usuário
     const { title, description, frequency } = req.body as NewHabitBody;
 
+    // Cria o hábito no banco
     const created = await req.server.prisma.habit.create({
       data: { title, description, frequency, userId },
     });
 
+    // Retorna os dados do hábito recém-criado
     return reply.code(201).send({
       id: created.id,
       title: created.title,
@@ -66,8 +66,8 @@ export const createHabit = async (req: FastifyRequest, reply: FastifyReply) => {
       frequency: created.frequency,
       userId: created.userId,
       createdAt: created.createdAt,
-      logs: [],            // sempre array
-      todayStatus: false,  // sempre boolean
+      logs: [],            // Sempre inicia com array vazio
+      todayStatus: false,  // Inicialmente não concluído hoje
     });
   } catch (err) {
     req.server.log.error(err);
@@ -77,13 +77,15 @@ export const createHabit = async (req: FastifyRequest, reply: FastifyReply) => {
 
 /**
  * DELETE /habits/:id
- * Remove hábito e seus logs
+ * Remove um hábito e todos os seus logs
  */
 export const deleteHabit = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const { id } = req.params as { id: string };
 
+    // Remove todos os logs do hábito
     await req.server.prisma.habitLog.deleteMany({ where: { habitId: id } });
+    // Remove o hábito em si
     await req.server.prisma.habit.delete({ where: { id } });
 
     return reply.send({ success: true });
@@ -95,7 +97,7 @@ export const deleteHabit = async (req: FastifyRequest, reply: FastifyReply) => {
 
 /**
  * PATCH /habits/:id/toggle
- * Marca ou desmarca hábito no dia atual
+ * Marca ou desmarca o hábito como concluído no dia atual
  */
 export const toggleHabitLog = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
@@ -103,18 +105,22 @@ export const toggleHabitLog = async (req: FastifyRequest, reply: FastifyReply) =
     const userId = (req.user as any).id;
     const todayKey = getTodayKey();
 
+    // Verifica se já existe um log do hábito para hoje
     const existing = await req.server.prisma.habitLog.findUnique({
       where: { habitId_dayKey: { habitId: id, dayKey: todayKey } },
     });
 
     if (existing) {
+      // Se já existe, remove (desmarca)
       await req.server.prisma.habitLog.delete({ where: { id: existing.id } });
     } else {
+      // Caso contrário, cria log marcado como concluído
       await req.server.prisma.habitLog.create({
         data: { habitId: id, dayKey: todayKey, status: true },
       });
     }
 
+    // Busca o hábito atualizado incluindo logs
     const habit = await req.server.prisma.habit.findUnique({
       where: { id },
       include: { logs: true },
@@ -124,8 +130,10 @@ export const toggleHabitLog = async (req: FastifyRequest, reply: FastifyReply) =
       return reply.code(404).send({ error: "Hábito não encontrado" });
     }
 
+    // Verifica se o hábito foi concluído hoje
     const todayStatus = habit.logs.some((l) => l.dayKey === todayKey && l.status);
 
+    // Busca todos os hábitos do usuário para estatísticas
     const allHabits = await req.server.prisma.habit.findMany({
       where: { userId },
       include: { logs: true },
@@ -135,8 +143,10 @@ export const toggleHabitLog = async (req: FastifyRequest, reply: FastifyReply) =
     const completedToday = allHabits.filter((h) =>
       h.logs.some((l) => l.dayKey === todayKey && l.status)
     ).length;
+
     const percent = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
 
+    // Retorna dados atualizados do hábito e estatísticas
     return reply.send({
       habit: {
         id: habit.id,
