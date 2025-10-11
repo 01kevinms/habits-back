@@ -1,5 +1,5 @@
  import { FastifyRequest, FastifyReply } from "fastify"; 
- import fetch from "node-fetch"; 
+ import fetch from "node-fetch";
  import { NutritionixFood } from "../types/fastify"; 
 
 
