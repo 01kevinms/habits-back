@@ -5,6 +5,8 @@ const diet_Controller_1 = require("../controllers/diet.Controller");
 async function DietRoutes(server) {
     server.addHook("preHandler", server.authGuard);
     server.get("/", async (req, reply) => (0, diet_Controller_1.getDiet)(req, reply));
+    server.get("/progress", async (req, reply) => (0, diet_Controller_1.getDietProgress)(req, reply));
+    server.post("/progress", async (req, reply) => (0, diet_Controller_1.getDietProgress)(req, reply));
     server.post("/", async (req, reply) => (0, diet_Controller_1.createDiet)(req, reply));
     server.post("/:dietId/food", async (req, reply) => (0, diet_Controller_1.createFood)(req, reply));
     server.put("/:id", async (req, reply) => (0, diet_Controller_1.updateDiet)(req, reply));

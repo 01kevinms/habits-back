@@ -6,6 +6,10 @@ datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
 }
+enum DietType {
+  cutting
+  bulking
+}
 
 model User {
   id           String    @id @default(auto()) @map("_id") @db.ObjectId
@@ -16,6 +20,7 @@ model User {
 
   habits       Habit[]
   diets        Diet[]
+  dietProgress DietProgress[]
   status       statusPhysical[]  // histórico de status físicos
 }
 
@@ -66,7 +71,11 @@ model Food {
   calories    Float
   protein     Float @default(0)
   carbs       Float @default(0)
-
+  originalCalories Float?   
+  originalProtein  Float?   
+  originalCarbs    Float?   
+  originalGrams    Float?
+  
   dietId      String   @db.ObjectId
   diet        Diet     @relation(fields: [dietId], references: [id])
 }
@@ -79,13 +88,21 @@ model statusPhysical {
   genere    String
   imc       Float
   tmb       Float
-  createdAt DateTime @default(now())
+  goalcalories  Float?
+  createdAt DateTime? @default(now())
 
   userId    String   @db.ObjectId
   user      User     @relation(fields: [userId], references: [id])
 }
 
-enum DietType {
-  cutting
-  bulking
+model DietProgress {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  date      DateTime 
+  calories  Float
+  goal      Float
+  achieved  Boolean
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date], name: "userId_date")
 }

@@ -22,9 +22,9 @@ server.register(prismaPlugin);
 
 // Plugin para autenticação com JWT
 server.register(authPlugin);
-
 // -------------------- Registrar CORS --------------------
 // Define quais origens, métodos e headers podem acessar o backend
+// https://01kevinms.github.io
 server.register(cors, {
   origin: ["https://01kevinms.github.io"], // Origem permitida (seu frontend no GitHub Pages)
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Métodos liberados

@@ -41,6 +41,13 @@ export interface NewDietBody {
   userId: string;
   foods?: NewFoodBody[];
 }
+export interface ProgressDiet{
+  id: string;
+  date?: string;
+  achieved: boolean;
+  goal: number;
+  calories: number;
+}
 export interface NewFoodBody {
   id: string
   description: string;
@@ -59,6 +66,9 @@ export interface NewStatusPhysical{
 }
 export interface NutritionixFood {
   food_name: string;
+  originalCalories: number;
+  originalGrams: number;
+  serving_weight_grams: number;
   serving_qty: number;
   serving_unit: string;
   nf_calories: number;

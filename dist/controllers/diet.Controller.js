@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getDiet = getDiet;
+exports.getDietProgress = getDietProgress;
 exports.createDiet = createDiet;
 exports.createFood = createFood;
 exports.updateDiet = updateDiet;
@@ -37,6 +38,67 @@ async function getDiet(req, reply) {
     catch (error) {
         req.server.log.error(error);
         return reply.code(500).send({ error: "Erro ao buscar dietas" });
+    }
+}
+async function getDietProgress(req, reply) {
+    try {
+        const userId = req.user.id;
+        const metadash = await req.server.prisma.statusPhysical.findFirst({
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+        });
+        const meta = metadash?.tmb ?? 0;
+        const goal = meta ?? 0; // pega o campo correto
+        // valor padrão opcional
+        const todayKey = new Date().toISOString().slice(0, 10);
+        // 🔹 Busca todas as dietas do dia
+        const diets = await req.server.prisma.diet.findMany({
+            where: { userId, datekey: todayKey },
+            include: { foods: true },
+        });
+        // 🔹 Soma todas as calorias
+        const totalCalories = diets.reduce((acc, diet) => {
+            const foodCalories = diet.foods?.reduce((sum, food) => sum + food.calories, 0) || 0;
+            return acc + foodCalories;
+        }, 0);
+        // 🔹 Atualiza ou cria o progresso do dia
+        const updated = await req.server.prisma.dietProgress.upsert({
+            where: { userId_date: { userId, date: new Date(todayKey) } },
+            update: {
+                calories: totalCalories,
+                achieved: totalCalories >= goal,
+            },
+            create: {
+                userId,
+                date: new Date(todayKey),
+                calories: totalCalories,
+                goal,
+                achieved: totalCalories >= goal,
+            },
+        });
+        // 🔹 Busca o progresso completo para o histórico
+        const progress = await req.server.prisma.dietProgress.findMany({
+            where: { userId },
+            orderBy: { date: "desc" },
+        });
+        // 🔹 Calcula a porcentagem do dia
+        const percentage = updated.goal > 0
+            ? Math.min((updated.calories / updated.goal) * 100, 100)
+            : 0;
+        // 🔹 Retorna o progresso completo e o resumo do dia
+        return reply.send({
+            today: {
+                calories: updated.calories,
+                goal: updated.goal,
+                achieved: updated.achieved,
+                percentage,
+            },
+            history: progress,
+        });
+    }
+    catch (error) {
+        req.server.log.error(error);
+        return reply.code(500).send({ error: "Erro ao buscar progresso da dieta" });
     }
 }
 // POST: Cria uma nova dieta
@@ -98,26 +160,51 @@ async function createDiet(req, reply) {
 }
 async function createFood(req, reply) {
     try {
-        const dietId = req.params;
-        const body = req.body;
-        if (!body.description || !body.grams) {
-            return reply.code(400).send({ error: "description e grams são obrigatórios" });
-        }
-        const food = await req.server.prisma.food.create({
-            data: {
-                description: body.description,
-                grams: body.grams,
-                calories: body.calories,
-                protein: body.protein,
-                carbs: body.carbs,
-                dietId: dietId.dietId
-            }
+        const { dietId } = req.params;
+        const { description, grams } = req.body;
+        if (!grams || grams <= 0)
+            return reply.status(400).send({ error: "Gramas inválido" });
+        // Busca o alimento na API Nutritionix
+        const APP_ID = process.env.NUTRITIONIX_APP_ID;
+        const API_KEY = process.env.NUTRITIONIX_API_KEY;
+        const res = await fetch("https://trackapi.nutritionix.com/v2/natural/nutrients", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-app-id": APP_ID,
+                "x-app-key": API_KEY,
+            },
+            body: JSON.stringify({ query: description }),
         });
-        return reply.code(201).send(food);
+        if (!res.ok) {
+            const text = await res.text();
+            return reply.status(res.status).send({ error: "Erro da API Nutritionix", details: text });
+        }
+        const data = (await res.json());
+        const foodData = data.foods[0];
+        // Garante que temos um valor base válido
+        const originalGrams = foodData.serving_weight_grams || foodData.serving_qty || 100;
+        // Cálculo proporcional (baseado nas gramas enviadas)
+        const factor = grams / originalGrams;
+        const createdFood = await req.server.prisma.food.create({
+            data: {
+                dietId,
+                description: foodData.food_name,
+                grams,
+                calories: foodData.nf_calories * factor,
+                protein: foodData.nf_protein * factor,
+                carbs: foodData.nf_total_carbohydrate * factor,
+                originalCalories: foodData.nf_calories,
+                originalProtein: foodData.nf_protein,
+                originalCarbs: foodData.nf_total_carbohydrate,
+                originalGrams, // ← agora sempre garantido
+            },
+        });
+        return reply.code(201).send(createdFood);
     }
     catch (error) {
         req.server.log.error(error);
-        return reply.code(500).send({ error: "Erro ao criar comida" });
+        return reply.status(500).send({ error: "Erro ao criar comida" });
     }
 }
 async function updateDiet(req, reply) {
@@ -157,27 +244,33 @@ async function updateFood(req, reply) {
     try {
         const { grams } = req.body;
         const { id } = req.params;
-        const food = await req.server.prisma.food.findUnique({
-            where: { id }
-        });
-        if (grams === 0)
+        if (!grams || grams <= 0) {
             return reply.status(400).send({ error: "Food grams inválido" });
+        }
+        // Busca o alimento no banco
+        const food = await req.server.prisma.food.findUnique({ where: { id } });
         if (!food)
-            return reply.code(404).send({ error: "comida nao encontrada" });
+            return reply.status(404).send({ error: "Comida não encontrada" });
+        // Garante que temos os valores originais
+        if (!food.originalCalories || !food.originalProtein || !food.originalCarbs || !food.originalGrams) {
+            return reply.status(500).send({ error: "Valores originais do alimento não encontrados" });
+        }
+        // Recalcula os macros proporcionalmente
+        const factor = grams / food.originalGrams;
         const updatedFood = await req.server.prisma.food.update({
             where: { id },
             data: {
                 grams,
-                calories: (food.calories / food.grams) * grams,
-                protein: (food.protein / food.grams) * grams,
-                carbs: (food.carbs / food.grams) * grams,
-            }
+                calories: food.originalCalories * factor,
+                protein: food.originalProtein * factor,
+                carbs: food.originalCarbs * factor,
+            },
         });
         return reply.send(updatedFood);
     }
     catch (error) {
         req.server.log.error(error);
-        return reply.code(500).send({ error: "Erro ao atualizar comida" });
+        return reply.status(500).send({ error: "Erro ao atualizar comida" });
     }
 }
 // DELETE: Deleta uma dieta específica
