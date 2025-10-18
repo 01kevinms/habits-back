@@ -45,6 +45,7 @@ todayDate.setHours(0, 0, 0, 0); // define 00:00:00 para evitar problemas de comp
   where: { userId_dates: { userId, date: todayDate } },
   update: {
     water: totalML,
+    goal: metawater,
     achieved: totalML >= metawater,
   },
   create: {
@@ -113,9 +114,12 @@ export async function createStatus(
     });
 
     // Cria ou atualiza progresso de água
-    const waterRecord = await req.server.prisma.waterProgress.upsert({
+     await req.server.prisma.waterProgress.upsert({
       where: { userId_dates: { userId, date: todayDate } }, // Confirme que o @@unique([userId, date]) existe no schema
-      update: {}, // Não altera nada se já existir
+      update: {    
+        goal:createdStatus.metawater ?? 0,
+        achieved: false,
+      }, // Não altera nada se já existir
       create: {
         userId,
         date: todayDate,
@@ -125,7 +129,6 @@ export async function createStatus(
       },
     });
 
-    console.log("Water record criado/atualizado:", waterRecord);
 
     return reply.code(201).send(createdStatus);
   } catch (err) {

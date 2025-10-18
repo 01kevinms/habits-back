@@ -42,6 +42,7 @@ async function getWaterProgress(req, reply) {
             where: { userId_dates: { userId, date: todayDate } },
             update: {
                 water: totalML,
+                goal: metawater,
                 achieved: totalML >= metawater,
             },
             create: {
@@ -102,9 +103,12 @@ async function createStatus(req, reply) {
             },
         });
         // Cria ou atualiza progresso de água
-        const waterRecord = await req.server.prisma.waterProgress.upsert({
+        await req.server.prisma.waterProgress.upsert({
             where: { userId_dates: { userId, date: todayDate } }, // Confirme que o @@unique([userId, date]) existe no schema
-            update: {}, // Não altera nada se já existir
+            update: {
+                goal: createdStatus.metawater ?? 0,
+                achieved: false,
+            }, // Não altera nada se já existir
             create: {
                 userId,
                 date: todayDate,
@@ -113,7 +117,6 @@ async function createStatus(req, reply) {
                 achieved: false,
             },
         });
-        console.log("Water record criado/atualizado:", waterRecord);
         return reply.code(201).send(createdStatus);
     }
     catch (err) {
