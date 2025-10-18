@@ -75,68 +75,62 @@ todayDate.setHours(0, 0, 0, 0); // define 00:00:00 para evitar problemas de comp
 }
 
 export async function createStatus(
-  req: FastifyRequest, 
+  req: FastifyRequest,
   reply: FastifyReply
 ) {
   try {
-    // Desestruturação do body
-    const { weight, height, age, genere} =req.body as NewStatusPhysical
-    const todayKey = new Date().toISOString().slice(0,10)
-    // Pega o ID do usuário autenticado
+    const { weight, height, age, genere } = req.body as NewStatusPhysical;
     const userId = req.user.id;
 
     // Validações
-    if (age == null) {
-      return reply.code(400).send({ error: "O campo 'age' é obrigatório." });
-    } if (!genere) {
-      return reply.code(400).send({ error: "O campo 'genere' é obrigatório." });
-    }
+    if (age == null) return reply.code(400).send({ error: "O campo 'age' é obrigatório." });
+    if (!genere) return reply.code(400).send({ error: "O campo 'genere' é obrigatório." });
 
-  
+    // Cálculos
+    const heightCm = height * 100;
+    const waterForPerson = 35 * weight;
+    const imc = Number((weight / (height * height)).toFixed(2));
+    const tmb = genere === "masculine"
+      ? 88.36 + 13.4 * weight + 4.8 * heightCm - 5.7 * age
+      : 447.6 + 9.2 * weight + 3.1 * heightCm - 4.3 * age;
 
-    const heightCm = height * 100; // Exemplo: 1.75m → 175cm
-    const waterforperson = 35 * weight
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const todayDate = new Date(`${todayKey}T00:00:00.000Z`); // Garante UTC 00:00 para evitar problemas de timezone
 
-// Calcula o IMC (Índice de Massa Corporal)
-// Fórmula: peso (kg) / (altura (m) * altura (m))
-const imc = Number((weight / (height * height)).toFixed(2));
-    // Calcula TMB (Taxa Metabólica Basal) baseado no gênero
-  const tmb =
-  genere === "masculine"
-    ? 88.36 + (13.4 * weight) + (4.8 * heightCm) - (5.7 * age) // fórmula para homens
-    : 447.6 + (9.2 * weight) + (3.1 * heightCm) - (4.3 * age); // fórmula para mulheres
+    // Cria status físico
+    const createdStatus = await req.server.prisma.statusPhysical.create({
+      data: {
+        userId,
+        height,
+        weight,
+        imc,
+        age,
+        genere,
+        tmb,
+        datekey: todayKey,
+        metawater: waterForPerson,
+      },
+    });
 
-    
-    // Cria a dieta no banco
-   const createdstatus = await req.server.prisma.statusPhysical.create({
-  data: {
-    userId, 
-    height, 
-    weight, 
-    imc, 
-    age, 
-    genere, 
-    tmb,
-    datekey:todayKey,
-    metawater:waterforperson,
-    }
-});
-await req.server.prisma.waterProgress.upsert({
-  where:{userId_dates:{userId, date: new Date(todayKey)}},
-  update:{},
-  create:{
-    userId,
-    date: new Date(todayKey),
-    water:0,
-    goal: createdstatus.metawater ??0,
-    achieved: false
-  }
-  })
-    // Retorna a dieta criada
-    return reply.code(201).send(createdstatus);
+    // Cria ou atualiza progresso de água
+    const waterRecord = await req.server.prisma.waterProgress.upsert({
+      where: { userId_dates: { userId, date: todayDate } }, // Confirme que o @@unique([userId, date]) existe no schema
+      update: {}, // Não altera nada se já existir
+      create: {
+        userId,
+        date: todayDate,
+        water: 0,
+        goal: createdStatus.metawater ?? 0,
+        achieved: false,
+      },
+    });
+
+    console.log("Water record criado/atualizado:", waterRecord);
+
+    return reply.code(201).send(createdStatus);
   } catch (err) {
     req.server.log.error(err);
-    return reply.code(500).send({ error: "Erro ao criar dieta" });
+    return reply.code(500).send({ error: "Erro ao criar status físico" });
   }
 }
 
