@@ -11,10 +11,10 @@ exports.deleteFood = deleteFood;
 // GET: Retorna todas as dietas do usuário
 async function getDiet(req, reply) {
     try {
+        const userId = req.user.id;
         if (!req.user) {
             return reply.code(401).send({ error: "Usuário não autenticado" });
         }
-        const userId = req.user.id;
         const todaykey = new Date().toISOString().slice(0, 10);
         const diet = await req.server.prisma.diet.findMany({
             where: { userId, datekey: todaykey },

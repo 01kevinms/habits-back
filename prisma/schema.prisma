@@ -21,6 +21,7 @@ model User {
   habits       Habit[]
   diets        Diet[]
   dietProgress DietProgress[]
+  waterProgress  WaterProgress[]
   status       statusPhysical[]  // histórico de status físicos
 }
 
@@ -81,18 +82,31 @@ model Food {
 }
 
 model statusPhysical {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  weight    Float
-  height    Float
-  age       Int
-  genere    String
-  imc       Float
-  tmb       Float
-  goalcalories  Float?
-  createdAt DateTime? @default(now())
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  weight         Float
+  height         Float
+  age            Int
+  genere         String
+  datekey        String?
+  imc            Float
+  tmb            Float
+  goalcalories   Float?
+  metawater      Float?       
+  createdAt      DateTime? @default(now())
 
+  userId         String   @db.ObjectId
+  user           User     @relation(fields: [userId], references: [id])
+}
+model WaterProgress {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
   userId    String   @db.ObjectId
+  date      DateTime 
+  water     Float
+  goal      Float
+  achieved  Boolean
   user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date], name: "userId_dates")
 }
 
 model DietProgress {

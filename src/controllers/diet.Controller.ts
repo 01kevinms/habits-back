@@ -1,15 +1,13 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { NewDietBody, NewFoodBody, NutritionixFood, ProgressDiet } from "../types/fastify";
-import { Diet } from "@prisma/client";
+import { NewDietBody, NutritionixFood } from "../types/fastify";
 
 // GET: Retorna todas as dietas do usuário
 export async function getDiet(req: FastifyRequest, reply: FastifyReply) {
   try {
+    const userId = req.user.id;
     if (!req.user) {
       return reply.code(401).send({ error: "Usuário não autenticado" });
     }
-
-    const userId = req.user.id;
     const todaykey = new Date().toISOString().slice(0, 10);
 
     const diet = await req.server.prisma.diet.findMany({
@@ -50,7 +48,6 @@ export async function getDietProgress(req: FastifyRequest, reply: FastifyReply) 
 });
 
 const meta = metadash?.tmb ?? 0;
-
 const goal = meta ?? 0; // pega o campo correto
 
  // valor padrão opcional

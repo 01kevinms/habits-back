@@ -41,13 +41,7 @@ export interface NewDietBody {
   userId: string;
   foods?: NewFoodBody[];
 }
-export interface ProgressDiet{
-  id: string;
-  date?: string;
-  achieved: boolean;
-  goal: number;
-  calories: number;
-}
+
 export interface NewFoodBody {
   id: string
   description: string;
@@ -62,7 +56,8 @@ export interface NewStatusPhysical{
     height: number;
     imc: number;
     age: number;
-    genere: GenereType
+    genere: GenereType;
+    water: number;
 }
 export interface NutritionixFood {
   food_name: string;
