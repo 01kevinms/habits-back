@@ -29,6 +29,8 @@ model Habit {
   id          String     @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   description String?
+  time        String?
+
   frequency   String     // 'daily' | 'weekly' | 'custom'
   createdAt   DateTime   @default(now())
 

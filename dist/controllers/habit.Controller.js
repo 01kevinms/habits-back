@@ -26,6 +26,7 @@ const getHabits = async (req, reply) => {
                 id: h.id,
                 title: h.title,
                 description: h.description,
+                time: h.time,
                 frequency: h.frequency,
                 userId: h.userId,
                 createdAt: h.createdAt,
@@ -48,16 +49,17 @@ exports.getHabits = getHabits;
 const createHabit = async (req, reply) => {
     try {
         const userId = req.user.id; // ID do usuário
-        const { title, description, frequency } = req.body;
+        const { title, description, frequency, time } = req.body;
         // Cria o hábito no banco
         const created = await req.server.prisma.habit.create({
-            data: { title, description, frequency, userId },
+            data: { title, description, frequency, userId, time },
         });
         // Retorna os dados do hábito recém-criado
         return reply.code(201).send({
             id: created.id,
             title: created.title,
             description: created.description,
+            time: created.time,
             frequency: created.frequency,
             userId: created.userId,
             createdAt: created.createdAt,

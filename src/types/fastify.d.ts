@@ -31,6 +31,7 @@ export interface NewHabitBody {
   title: string;
   description?: string;
   frequency: "daily" | "weekly" | "monthly";
+  time: string;
 }
 
 export interface NewDietBody {

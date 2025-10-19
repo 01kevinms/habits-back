@@ -29,6 +29,7 @@ export const getHabits = async (req: FastifyRequest, reply: FastifyReply) => {
         id: h.id,
         title: h.title,
         description: h.description,
+        time: h.time,
         frequency: h.frequency,
         userId: h.userId,
         createdAt: h.createdAt,
@@ -51,11 +52,11 @@ export const getHabits = async (req: FastifyRequest, reply: FastifyReply) => {
 export const createHabit = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
     const userId = (req.user as any).id;               // ID do usuário
-    const { title, description, frequency } = req.body as NewHabitBody;
+    const { title, description, frequency, time } = req.body as NewHabitBody;
 
     // Cria o hábito no banco
     const created = await req.server.prisma.habit.create({
-      data: { title, description, frequency, userId },
+      data: { title, description, frequency, userId, time },
     });
 
     // Retorna os dados do hábito recém-criado
@@ -63,6 +64,7 @@ export const createHabit = async (req: FastifyRequest, reply: FastifyReply) => {
       id: created.id,
       title: created.title,
       description: created.description,
+      time: created.time,
       frequency: created.frequency,
       userId: created.userId,
       createdAt: created.createdAt,
